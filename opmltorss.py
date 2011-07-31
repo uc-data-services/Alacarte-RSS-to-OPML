@@ -24,16 +24,13 @@ dm.text = generated_on
 body = SubElement(root, 'body')
 
 def write_xml(elem):
-    """Return a pretty-printed XML string for the Element.
+    """Write out a pretty print xml doc to file.
     """
     rough_string = ElementTree.tostring(elem, 'utf-8')
     reparsed = minidom.parseString(rough_string)
     with open('ucb-guides-feeds.xml', mode='w') as a_file:
-        try:
-            a_file.write(reparsed.toprettyxml(indent=" "))
-        finally:
-            a_file.close()
-
+        a_file.write(reparsed.toprettyxml(indent=" "))
+       
 feed_base_url = 'http://lib.berkeley.edu/alacarte/srg/feed/'
 guide_base_url = 'http://lib.berkeley.edu/alacarte/subject-guide/'
 response = urllib2.urlopen('http://lib.berkeley.edu/alacarte/subject-guides')
