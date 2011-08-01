@@ -21,14 +21,14 @@ head = SubElement(root, 'head')
 title = SubElement(head, 'title')
 title.text = 'UC Berekeley Guides'
 dc = SubElement(head, 'dateCreated')
-dc.text = generated_on
-dm = SubElement(head, 'dateModified')
-if os.path.isfile('ucb-guides-feeds.opml'):
+if os.path.isfile('ucb-guides-feeds.opml'): #seeing if file exists
     with open('ucb-guides-feeds.opml', 'rt') as f:
         tree = ElementTree.parse(f)
-    dm.text = str(tree.find('.//dateModified').text).strip()
+    dc.text = str(tree.find('.//dateCreated').text).strip() #finding creation date if file exists
 else:
-    dm.text = generated_on
+    dc.text = generated_on
+dm = SubElement(head, 'dateModified')
+dm.text = generated_on
 
 body = SubElement(root, 'body')
 
@@ -50,10 +50,12 @@ for part in guide_part:
     subject_urls = set(re.findall('alacarte/\w*-guide/(.*?)".*?>(.*?)</a>', html))
     current_group = SubElement(body, 'outline', {'text':current_group})
     for url, title in subject_urls:
-        podcast = SubElement(current_group, 'outline',
+        if re.search("\s\s+", title):
+            title = re.sub("\s\s+", " ", title)
+        feed = SubElement(current_group, 'outline',
                                  {'text': title,
                                   'xmlUrl':feed_base_url+url,
-                                  'htmlUrl':feed_base_url+url,
+                                  'htmlUrl':guide_base_url+url,
                                   })
           
 write_xml(root)
