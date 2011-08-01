@@ -1,9 +1,13 @@
+#!/usr/bin/env python 
+
 from xml.etree.ElementTree import Element, SubElement, Comment, tostring, ElementTree
 from xml.etree import ElementTree
 from xml.dom import minidom
 import datetime
 import urllib2
 import re 
+import string
+import os
 
 generated_on = str(datetime.datetime.now())
 
@@ -19,7 +23,12 @@ title.text = 'UC Berekeley Guides'
 dc = SubElement(head, 'dateCreated')
 dc.text = generated_on
 dm = SubElement(head, 'dateModified')
-dm.text = generated_on
+if os.path.isfile('ucb-guides-feeds.opml'):
+    with open('ucb-guides-feeds.opml', 'rt') as f:
+        tree = ElementTree.parse(f)
+    dm.text = str(tree.find('.//dateModified').text).strip()
+else:
+    dm.text = generated_on
 
 body = SubElement(root, 'body')
 
@@ -28,19 +37,23 @@ def write_xml(elem):
     """
     rough_string = ElementTree.tostring(elem, 'utf-8')
     reparsed = minidom.parseString(rough_string)
-    with open('ucb-guides-feeds.xml', mode='w') as a_file:
+    with open('ucb-guides-feeds.opml', mode='w') as a_file:
         a_file.write(reparsed.toprettyxml(indent=" "))
        
 feed_base_url = 'http://lib.berkeley.edu/alacarte/srg/feed/'
-guide_base_url = 'http://lib.berkeley.edu/alacarte/subject-guide/'
-response = urllib2.urlopen('http://lib.berkeley.edu/alacarte/subject-guides')
-html = response.read()
-subject_urls = set(re.findall('/subject-guide/(.*?)".*?>(.*?)</a>', html))
-current_group = SubElement(body, 'outline', {'text':'Subject Guides'})
-for url, title in subject_urls:
-    podcast = SubElement(current_group, 'outline',
-                             {'text': title,
-                              'xmlUrl':feed_base_url+url,
-                              'htmlUrl':feed_base_url+url,
-                              })
-      
+guide_base_url = 'http://lib.berkeley.edu/alacarte/'
+guide_part = ['subject-guides', 'course-guides']
+for part in guide_part:
+    current_group = string.capwords(part.replace('-', ' '))
+    response = urllib2.urlopen(guide_base_url+part)
+    html = response.read()
+    subject_urls = set(re.findall('alacarte/\w*-guide/(.*?)".*?>(.*?)</a>', html))
+    current_group = SubElement(body, 'outline', {'text':current_group})
+    for url, title in subject_urls:
+        podcast = SubElement(current_group, 'outline',
+                                 {'text': title,
+                                  'xmlUrl':feed_base_url+url,
+                                  'htmlUrl':feed_base_url+url,
+                                  })
+          
+write_xml(root)
